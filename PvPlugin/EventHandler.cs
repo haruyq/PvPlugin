@@ -1,7 +1,12 @@
-﻿using Exiled.API.Features;
+﻿using CommandSystem.Commands.RemoteAdmin;
+using Exiled.API.Enums;
+using Exiled.API.Features;
+using Exiled.API.Features.Items;
 using Exiled.API.Features.Roles;
 using Exiled.Events.EventArgs.Player;
+using InventorySystem.Items.Firearms.Ammo;
 using MEC;
+using PlayerRoles;
 using System;
 using System.Collections.Generic;
 
@@ -15,23 +20,39 @@ namespace PvPluginEventHandler
         {
             Exiled.Events.Handlers.Player.Verified += OnVerified;
             Exiled.Events.Handlers.Server.RoundStarted += OnRoundStarted;
+            Exiled.Events.Handlers.Player.ChangingRole += OnChangingRole;
         }
         public void UnregisterEvents()
         {
             Exiled.Events.Handlers.Player.Verified -= OnVerified;
             Exiled.Events.Handlers.Server.RoundStarted -= OnRoundStarted;
+            Exiled.Events.Handlers.Player.ChangingRole -= OnChangingRole;
         }
 
         public void OnVerified(VerifiedEventArgs ev)
         {
             if (Round.InProgress == true)
             {
-                ev.Player.Role.Set(PlayerRoles.RoleTypeId.Spectator);
+                ev.Player.Role.Set(RoleTypeId.Spectator);
             }
             else
             {
-                ev.Player.Role.Set(PlayerRoles.RoleTypeId.Tutorial);
+                ev.Player.Role.Set(RoleTypeId.Tutorial);
             }
+        }
+
+        public void OnChangingRole(ChangingRoleEventArgs ev)
+        {
+            if (ev.Player == null)
+            {
+                Log.Info($"{ev.Player.Nickname} このプレイヤーはnullです");
+                return;
+            }
+
+            ev.Items.Clear();
+            ev.Items.Add(ItemType.GunE11SR);
+            ev.Items.Add(ItemType.ArmorCombat);
+            ev.Ammo.Add(ItemType.Ammo556x45, 120);
         }
 
         public void OnRoundStarted()
@@ -39,6 +60,7 @@ namespace PvPluginEventHandler
             Log.Info("ラウンドが開始されました！");
             Timing.RunCoroutine(RoundRoutine());
             Timing.RunCoroutine(RoundStart());
+            Timing.RunCoroutine(BroadcastRemainingTime(237));
         }
 
         private IEnumerator<float> RoundRoutine()
@@ -56,7 +78,25 @@ namespace PvPluginEventHandler
             }
         }
 
-        private IEnumerator<float> RoundIsEnd()
+        private IEnumerator<float> BroadcastRemainingTime(int totalSeconds)
+        {
+            while (totalSeconds >= 0)
+            {
+                int minutes = totalSeconds / 60;
+                int seconds = totalSeconds % 60;
+                string message = $"<b><color=#00d9ff>--------------------\\</color></b> {minutes}:{(seconds < 10 ? "0" : "")}{seconds} <b><color=#00d9ff>/--------------------</color></b>";
+                foreach (Player player in Player.List)
+                {
+                    player.ShowHint($"{message}" + "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n"); // 1秒間メッセージを表示
+                }
+                yield return Timing.WaitForSeconds(1);
+                totalSeconds--;
+            }
+
+            yield break; // コルーチン終了
+        }
+
+    private IEnumerator<float> RoundIsEnd()
         {
             foreach (Player player in Player.List)
             {
