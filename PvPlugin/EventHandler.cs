@@ -4,11 +4,19 @@ using Exiled.API.Features;
 using Exiled.API.Features.Items;
 using Exiled.API.Features.Roles;
 using Exiled.Events.EventArgs.Player;
+using Interactables.Interobjects.DoorUtils;
+using Interactables.Interobjects;
 using InventorySystem.Items.Firearms.Ammo;
 using MEC;
 using PlayerRoles;
 using System;
 using System.Collections.Generic;
+using static Interactables.Interobjects.ElevatorManager;
+using Exiled.API.Features.Doors;
+using System.Collections;
+using ElevatorDoor = Exiled.API.Features.Doors.ElevatorDoor;
+using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 
 namespace PvPluginEventHandler
 {
@@ -50,6 +58,7 @@ namespace PvPluginEventHandler
             }
 
             ev.Items.Clear();
+            ev.Ammo.Clear();
             ev.Items.Add(ItemType.GunE11SR);
             ev.Items.Add(ItemType.ArmorCombat);
             ev.Ammo.Add(ItemType.Ammo556x45, 120);
@@ -60,6 +69,7 @@ namespace PvPluginEventHandler
             Log.Info("ラウンドが開始されました！");
             Timing.RunCoroutine(RoundRoutine());
             Timing.RunCoroutine(RoundStart());
+            Timing.RunCoroutine(LockElevators());
             Timing.RunCoroutine(BroadcastRemainingTime(237));
         }
 
@@ -76,6 +86,14 @@ namespace PvPluginEventHandler
                 Log.Info("ラウンド終了");
                 Timing.RunCoroutine(RoundIsEnd());
             }
+        }
+
+        private IEnumerator<float> LockElevators()
+        {
+            foreach (Door door in Door.List.Where(x => x.Type == DoorType.ElevatorGateA || x.Type == DoorType.ElevatorGateB))
+                door.ChangeLock(DoorLockType.Warhead);
+            Log.Info("エレベーターをロックしました");
+            yield break;
         }
 
         private IEnumerator<float> BroadcastRemainingTime(int totalSeconds)
@@ -100,11 +118,11 @@ namespace PvPluginEventHandler
         {
             foreach (Player player in Player.List)
             {
-                player.Role.Set(PlayerRoles.RoleTypeId.Tutorial); // 全プレイヤーの役割をチュートリアルに設定
+                player.Role.Set(RoleTypeId.Tutorial);
             }
 
-            yield return Timing.WaitForSeconds(20); // さらに20秒待機
-            Round.Restart(); // ラウンドを再スタート
+            yield return Timing.WaitForSeconds(20); // 20秒待機
+            Round.RestartSilently(); // ラウンドを再スタート
         }
 
         private IEnumerator<float> RoundStart()
@@ -123,12 +141,12 @@ namespace PvPluginEventHandler
             // ここで各グループに対して処理を行う
             foreach (Player player in firstHalf)
             {
-                player.Role.Set(PlayerRoles.RoleTypeId.NtfSergeant); // 例：役割をNTFに設定
+                player.Role.Set(RoleTypeId.NtfSergeant); // 例：役割をNTFに設定
             }
 
             foreach (Player player in secondHalf)
             {
-                player.Role.Set(PlayerRoles.RoleTypeId.ChaosRifleman); // 例：役割をCIに設定
+                player.Role.Set(RoleTypeId.ChaosRifleman); // 例：役割をCIに設定
             }
 
             yield break; // コルーチン終了
