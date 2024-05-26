@@ -96,7 +96,7 @@ namespace PvPluginEventHandler
             yield break; // コルーチン終了
         }
 
-    private IEnumerator<float> RoundIsEnd()
+        private IEnumerator<float> RoundIsEnd()
         {
             foreach (Player player in Player.List)
             {
