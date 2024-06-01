@@ -17,10 +17,11 @@ using System.Collections;
 using ElevatorDoor = Exiled.API.Features.Doors.ElevatorDoor;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
+using UnityEngine;
 
 namespace PvPluginEventHandler
 {
-    public class EventHandler
+    public class EventHandler : MonoBehaviour
     {
 		public static bool IsEventEnabled { get; set; } = false;
 
@@ -67,10 +68,11 @@ namespace PvPluginEventHandler
         public void OnRoundStarted()
         {
             Log.Info("ラウンドが開始されました！");
-            Timing.RunCoroutine(RoundRoutine());
-            Timing.RunCoroutine(RoundStart());
-            Timing.RunCoroutine(LockElevators());
-            Timing.RunCoroutine(BroadcastRemainingTime(237));
+            Round.IsLocked = true;
+            StartCoroutine(RoundRoutine());
+            StartCoroutine(RoundStart());
+            StartCoroutine(LockElevators());
+            StartCoroutine(BroadcastRemainingTime(237));
         }
 
         private IEnumerator<float> RoundRoutine()
@@ -78,13 +80,13 @@ namespace PvPluginEventHandler
             if (Round.InProgress == false)
             {
                 Log.Info("ラウンド終了");
-                Timing.RunCoroutine(RoundIsEnd());
+                StartCoroutine(RoundIsEnd());
             }
             else if (Round.InProgress == true)
             {
                 yield return Timing.WaitForSeconds(240); // 240秒待機
                 Log.Info("ラウンド終了");
-                Timing.RunCoroutine(RoundIsEnd());
+                StartCoroutine(RoundIsEnd());
             }
         }
 
@@ -116,13 +118,25 @@ namespace PvPluginEventHandler
 
         private IEnumerator<float> RoundIsEnd()
         {
-            foreach (Player player in Player.List)
+            for (int i = 0; i < 5; i++)
             {
-                player.Role.Set(RoleTypeId.Tutorial);
-            }
+                StopCoroutine(RoundRoutine());
+                StopCoroutine(RoundStart());
+                StopCoroutine(LockElevators());
+                StopCoroutine(BroadcastRemainingTime(0));
 
-            yield return Timing.WaitForSeconds(20); // 20秒待機
-            Round.RestartSilently(); // ラウンドを再スタート
+                yield return Timing.WaitForSeconds(10);
+
+                Timing.WaitForSeconds(1);
+
+                Log.Info("ラウンドが開始されました！");
+
+                StartCoroutine(RoundRoutine());
+                StartCoroutine(RoundStart());
+                StartCoroutine(LockElevators());
+                StartCoroutine(BroadcastRemainingTime(237));
+            }
+            yield break;
         }
 
         private IEnumerator<float> RoundStart()
