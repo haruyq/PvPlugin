@@ -69,25 +69,9 @@ namespace PvPluginEventHandler
         {
             Log.Info("ラウンドが開始されました！");
             Round.IsLocked = true;
-            StartCoroutine(RoundRoutine());
             StartCoroutine(RoundStart());
             StartCoroutine(LockElevators());
             StartCoroutine(BroadcastRemainingTime(237));
-        }
-
-        private IEnumerator<float> RoundRoutine()
-        {
-            if (Round.InProgress == false)
-            {
-                Log.Info("ラウンド終了");
-                StartCoroutine(RoundIsEnd());
-            }
-            else if (Round.InProgress == true)
-            {
-                yield return Timing.WaitForSeconds(240); // 240秒待機
-                Log.Info("ラウンド終了");
-                StartCoroutine(RoundIsEnd());
-            }
         }
 
         private IEnumerator<float> LockElevators()
@@ -114,29 +98,6 @@ namespace PvPluginEventHandler
             }
 
             yield break; // コルーチン終了
-        }
-
-        private IEnumerator<float> RoundIsEnd()
-        {
-            for (int i = 0; i < 5; i++)
-            {
-                StopCoroutine(RoundRoutine());
-                StopCoroutine(RoundStart());
-                StopCoroutine(LockElevators());
-                StopCoroutine(BroadcastRemainingTime(0));
-
-                yield return Timing.WaitForSeconds(10);
-
-                Timing.WaitForSeconds(1);
-
-                Log.Info("ラウンドが開始されました！");
-
-                StartCoroutine(RoundRoutine());
-                StartCoroutine(RoundStart());
-                StartCoroutine(LockElevators());
-                StartCoroutine(BroadcastRemainingTime(237));
-            }
-            yield break;
         }
 
         private IEnumerator<float> RoundStart()
